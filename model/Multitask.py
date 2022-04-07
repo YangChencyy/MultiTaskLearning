@@ -32,23 +32,23 @@ class MultiTaskModel(nn.Module):
     def forward(self, x):
 
         #x = self.encoder(x)
-        print(x.shape)
+        #print(x.shape)
         #x=torch.squeeze(x)
         x = torch.flatten(x, start_dim = 1)
         x.requires_grad=True
-        print(x.requires_grad)
-        print(x.shape)
+        # print(x.requires_grad)
+        # print(x.shape)
         PHQ_B1 = self.fc1(x)
-        print(PHQ_B1.shape)
+        #print(PHQ_B1.shape)
         PHQ_B2 = self.relu1(PHQ_B1)
 
-        print(PHQ_B2.shape)
+        #print(PHQ_B2.shape)
         PHQ_B3 = self.drop1(PHQ_B2)
 
-        print(PHQ_B3.shape)
+        #print(PHQ_B3.shape)
         PHQ_B4 = self.fcL1(PHQ_B3)
 
-        print(PHQ_B4.shape)
+        #print(PHQ_B4.shape)
         PHQ_Binary = self.sigmoid(PHQ_B4)
         
         PHQ_Score = self.fc2(x)    # think about how to change the architeture
@@ -67,7 +67,7 @@ class MultiTaskLossWrapper(nn.Module):
         #super(MultiTaskLossWrapper, self).__init__()
         super().__init__()
         self.task_num = task_num
-        self.log_vars = nn.Parameter(torch.zeros((task_num)))
+        self.log_vars = nn.Parameter(torch.zeros((task_num),requires_grad=True))
 
     def forward(self, preds, PHQ_Binary, PHQ_Score):
         # mse=MSELossFlat()
@@ -105,7 +105,14 @@ class MultiTaskLossWrapper(nn.Module):
         print(loss.requires_grad)
         
         return loss.long()
-
+        
+def criterion(y_pred, y_true, log_vars):
+  loss = 0
+  for i in range(len(y_pred)):
+    precision = torch.exp(-log_vars[i])
+    diff = (y_pred[i]-y_true[i])**2.
+    loss += torch.sum(precision * diff + log_vars[i], -1)
+  return torch.mean(loss)
 
 def acc_Binary(preds, PHQ_binary, PHQ_Score): return root_mean_squared_error(preds[0], PHQ_binary)
 def acc_Score(preds, PHQ_binary, PHQ_Score): return accuracy(preds[1], PHQ_Score)
