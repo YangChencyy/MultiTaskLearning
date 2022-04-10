@@ -1,10 +1,5 @@
 import torch
 import torch.nn as nn
-
-from fastai import *
-from fastai.vision import create_body, create_head
-from fastai.layers import MSELossFlat, CrossEntropyFlat
-from torchvision import transforms
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -61,65 +56,5 @@ class MultiTaskModel(nn.Module):
         # PHQ_Binary.requires_grad=True
         # PHQ_Score.requires_grad=True
         return [PHQ_Binary, PHQ_Score]
-
-class MultiTaskLossWrapper(nn.Module):
-    def __init__(self, task_num):
-        #super(MultiTaskLossWrapper, self).__init__()
-        super().__init__()
-        self.task_num = task_num
-        self.log_vars = nn.Parameter(torch.zeros((task_num),requires_grad=True))
-
-    def forward(self, preds, PHQ_Binary, PHQ_Score):
-        # mse=MSELossFlat()
-        crossEntropy = nn.CrossEntropyLoss()
-        print(PHQ_Binary.requires_grad)
-        print(PHQ_Score.requires_grad)
-        crossEntropy.requires_grad = True
-        # preds[0].requires_grad_ = True
-        PHQ_Binary = PHQ_Binary.float()
-        PHQ_Binary.requires_grad = True
-        # preds[1].requires_grad_ = True
-        PHQ_Score = PHQ_Score.float()
-        PHQ_Score.requires_grad = True
-        print(preds[0], PHQ_Binary)
-        # with torch.no_grad():
-        loss0=crossEntropy(preds[0], PHQ_Binary.long())
-        # loss0=crossEntropy(torch.argmax(preds[0], dim=1),PHQ_Binary)
-        #loss0 = crossEntropy(preds[0], PHQ_Binary)
-        print("ccc")
-        print(loss0.requires_grad)    
-        loss1 = crossEntropy(preds[1], PHQ_Score.long())
-        # loss0=loss0.long()
-        # loss1=loss1.long()
-        print(loss1.requires_grad)
-        precision0 = torch.exp(-self.log_vars[0])
-        loss0 = precision0*loss0 + self.log_vars[0]
-
-        precision1 = torch.exp(-self.log_vars[1])
-        loss1 = precision1*loss1 + self.log_vars[1]
-        print("sss")
-        print(loss0.requires_grad)
-        print(loss1.requires_grad)
-
-        loss = loss0 + loss1
-        print(loss.requires_grad)
-        
-        return loss.long()
-        
-def criterion(y_pred, y_true, log_vars):
-  loss = 0
-  for i in range(len(y_pred)):
-    precision = torch.exp(-log_vars[i])
-    diff = (y_pred[i]-y_true[i])**2.
-    loss += torch.sum(precision * diff + log_vars[i], -1)
-  return torch.mean(loss)
-
-def acc_Binary(preds, PHQ_binary, PHQ_Score): return root_mean_squared_error(preds[0], PHQ_binary)
-def acc_Score(preds, PHQ_binary, PHQ_Score): return accuracy(preds[1], PHQ_Score)
-
-def metrics():
-    return [acc_Binary, acc_Score]
-
-
 
 
