@@ -5,10 +5,17 @@ import copy
 import torch
 import torch.nn as nn
 import torch.optim as optimizer
-from sklearn.metrics import recall_score, confusion_matrix, f1_score
+from sklearn.metrics import recall_score, confusion_matrix, f1_score, mean_squared_error
 import matplotlib.pyplot as plt
 
 
+class RMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
+        
+    def forward(self,yhat,y):
+        return torch.sqrt(self.mse(yhat,y))
 
 
 def calculate_loss_binary(class_weights, scores, label):  #scores are predicted outputs
@@ -27,9 +34,12 @@ def calculate_loss_binary(class_weights, scores, label):  #scores are predicted 
           to specify the weight and ignore_index arguments
     """
 
-    loss1 = nn.CrossEntropyLoss(weight = class_weights)
+    # loss1 = nn.CrossEntropyLoss(weight = class_weights)
 
-    return loss1(scores, label.long()) 
+    # return loss1(scores, label.long()) 
+    criterion = RMSELoss()
+    print(scores)
+    return criterion(label.long(), scores)
 
 
 def get_optimizer(net, lr, weight_decay):
@@ -165,8 +175,8 @@ def get_validation_performance_binary(net, class_weights, data_loader, device):
             print(torch.flatten(label.cpu()), torch.flatten(pred.cpu()))
          
             ###################### End of your code ######################
-            y_true.append(torch.flatten(label[0].cpu()))
-            y_pred.append(torch.flatten(pred[1].cpu()))
+            y_true.append(torch.flatten(label.cpu()))
+            y_pred.append(torch.flatten(pred.cpu()))
             #print(y_true, y_pred)
 
     #print("loop out")
