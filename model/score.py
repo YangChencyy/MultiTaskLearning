@@ -98,7 +98,7 @@ class TextCNNEncoder2(nn.Module):
         return output
 
 
-class BinaryModel(nn.Module):
+class ScoreModel(nn.Module):
     def __init__(self, kernel_size, num_channel,ps=0.5):
         #super(MultiTaskModel,self).__init__()
         super().__init__()
@@ -115,30 +115,32 @@ class BinaryModel(nn.Module):
         self.drop=nn.Dropout(p=ps)
         self.linear1=nn.Linear(cnn_out_dim,64)
         self.linear2=nn.Linear(len(kernel_size)*num_channel,64)
-        self.linear3=nn.Linear(88,2)
+        self.linear3=nn.Linear(988,8)
         self.fcLd=nn.Linear(len(kernel_size)*num_channel,2)
         #self.linear2=nn.Linear(64,2)
         self.sigmoid=nn.Sigmoid()
+        self.softmax=nn.Softmax()
 
 
     def forward(self, text_emb,audio_emb):
         text_emb = self.textcnn(text_emb)
         #audio_emb = self.textcnn2(audio_emb)
-        #print(text_emb.shape)
-        #print(audio_emb.shape)
+        print(text_emb.shape)
+        
         #x = torch.cat((text_emb, audio_emb), dim=1)
         #x = self.drop(x)
         #x = self.linear1(x)
         #print(audio_emb.shape)
         audio= torch.sum(audio_emb,dim=1)/10
-        x = torch.cat((text_emb, audio_emb), dim=1)
+        x = torch.cat((text_emb, audio), dim=1)
         #print(audio.shape)
         x = self.drop(x)
         x = self.linear3(x)
         # x = self.relu1(x)
         # x = self.fcL1(x)
         #x = self.fcLd(audio_emb)
-        #PHQ_Binary= self.sigmoid(x)
+        # PHQ_Binary= self.sigmoid(x)
+        #PHQ_Score= self.softmax(x)
         # x = torch.flatten(x, start_dim = 1)
         # x.requires_grad=True
         # PHQ_B1 = self.fc1(x)
@@ -154,4 +156,5 @@ class BinaryModel(nn.Module):
         # PHQ_Binary = self.sigmoid(PHQ_B4)
 
         return x
+        #return PHQ_Score
         #return PHQ_Binary
